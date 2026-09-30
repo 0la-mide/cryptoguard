@@ -13,7 +13,9 @@ Crypto Op → Raw Timing → [IIR Filter] → [PID Controller] → (WCET pad) �
 - **Two modes.** *Beginner* (the default) is a guided choose → run → understand journey: plain-language
   scenario cards, a plain explanation beside every setting, advanced settings collapsed, and a "What
   happened" summary with a suggested next scenario. *Pro* is the full technical dashboard. Every
-  explanation opens on tap, never on hover, so it works on touchscreens.
+  explanation opens on tap, never on hover alone, so it works on touchscreens.
+- **Glossary.** Dotted-underlined terms (IIR, PID, WCET, p-value, …) explain themselves in plain English, with an
+  everyday analogy, on hover, tap or keyboard focus. The How it works page ends with the full glossary (`src/lib/glossary.ts`).
 - **Backend:** FastAPI. `app/engine.py` is a parameterised port of `original_leakage_analysis.py`, with
   the pipeline maths unchanged.
 - **Deploy:** Docker Compose (API + Nginx static/proxy), routed by an existing Traefik instance through

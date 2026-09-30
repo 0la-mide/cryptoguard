@@ -1,7 +1,14 @@
 import { PARAMS, SCENARIOS, type ParamKey, type ScenarioId } from '../lib/content'
 import type { Mode } from '../lib/mode'
 import type { SimConfig, ThreatModel } from '../types'
+import type { GlossaryKey } from '../lib/glossary'
+import { Term } from './Term'
 import { Collapsible, Explainable, PanelHeader } from './ui'
+
+const PARAM_TERM: Record<ParamKey, GlossaryKey> = {
+  samples: 'samples', bit_gap_ms: 'gap', noise_std_ms: 'noise', alpha: 'alpha', kp: 'kp', ki: 'ki', kd: 'kd',
+  setpoint_ms: 'setpoint', wcet: 'wcetPadding', wcet_budget_ms: 'wcet', threshold_ms: 'threshold', threat_model: 'threatModel',
+}
 
 export type JourneyStep = 1 | 2 | 3
 
@@ -230,9 +237,12 @@ function ParamLabel({ mode, param, right, htmlFor }: { mode: Mode; param: ParamK
     return (
       <div>
         <div className="flex items-center justify-between gap-2">
-          <label htmlFor={htmlFor} className="text-[13px] text-ink">
-            {p.plain} <span className="ml-1 rounded bg-panel-2 px-1 py-px font-mono text-[10px] text-dim">{p.pro}</span>
-          </label>
+          <span className="text-[13px] text-ink">
+            <label htmlFor={htmlFor}>{p.plain}</label>{' '}
+            <span className="ml-1 rounded bg-panel-2 px-1 py-px font-mono text-[10px] text-dim">
+              <Term k={PARAM_TERM[param]}>{p.pro}</Term>
+            </span>
+          </span>
           {right}
         </div>
         <p className="mt-0.5 text-[11.5px] leading-snug text-dim">{p.what}</p>

@@ -3,6 +3,7 @@ import { explain, THREAT_TEXT, type ScenarioId } from '../lib/content'
 import type { Mode } from '../lib/mode'
 import type { SimResult, ThreatModel } from '../types'
 import { CountUp } from './CountUp'
+import { Term } from './Term'
 import { Collapsible, PanelHeader } from './ui'
 
 type Props = {
@@ -57,11 +58,11 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
         {leaked ? '⚠ LEAK DETECTED' : '✓ DEFENSE HOLDING'}
       </div>
       <dl className="grid grid-cols-2 gap-y-2 font-mono text-[13px]">
-        <dt className="text-muted">{plain ? 'Difference seen' : 'Gap'}</dt>
+        <dt className="text-muted"><Term k="gap">{plain ? 'Difference seen' : 'Gap'}</Term></dt>
         <dd className="text-right text-lg font-bold tabular-nums" style={{ color: tone }}>
           <CountUp value={obs.gap_ms} runKey={runKey} />ms
         </dd>
-        <dt className="text-muted">{plain ? 'Allowed' : 'Threshold'}</dt>
+        <dt className="text-muted"><Term k="threshold">{plain ? 'Allowed' : 'Threshold'}</Term></dt>
         <dd className="text-right tabular-nums">{cfg.threshold_ms}ms</dd>
       </dl>
       <p className="mt-3 border-t border-line pt-3 text-[13px] leading-snug">
@@ -112,7 +113,7 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
         )}
       </Block>
 
-      <Block title="Welch's t-test" delay={300}>
+      <Block title={<Term k="tTest" />} delay={300}>
         {plain && (
           <p className="mb-3 text-[11.5px] leading-snug text-dim">
             A statistical test of whether the bit-0 and bit-1 timings really differ, or whether the difference could be luck.
@@ -120,13 +121,13 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
           </p>
         )}
         <dl className="grid grid-cols-[1fr_auto] gap-y-1.5 font-mono text-[12.5px]">
-          <dt className="text-muted">t-statistic</dt>
+          <dt className="text-muted"><Term k="tStat" /></dt>
           <dd className="text-right tabular-nums"><CountUp value={obs.t_stat} decimals={3} runKey={runKey} /></dd>
-          <dt className="text-muted">p-value</dt>
+          <dt className="text-muted"><Term k="pValue" /></dt>
           <dd className="text-right tabular-nums">{obs.p_value < 1e-4 ? '< 0.0001' : obs.p_value.toFixed(4)}</dd>
-          <dt className="text-muted">Samples used</dt>
+          <dt className="text-muted"><Term k="samples">Samples used</Term></dt>
           <dd className="text-right tabular-nums">{obs.n}</dd>
-          <dt className="text-muted">Distinguishable</dt>
+          <dt className="text-muted"><Term k="distinguishable" /></dt>
           <dd className="text-right font-bold" style={{ color: obs.distinguishable ? '#ff9d7c' : '#3fd6a2' }}>
             {obs.distinguishable ? 'YES' : 'NO'}
           </dd>
@@ -217,7 +218,7 @@ function ThreatCard({ model, plain }: { model: ThreatModel; plain: boolean }) {
   )
 }
 
-function Block({ title, children, delay = 0, accent }: { title: string; children: ReactNode; delay?: number; accent?: string }) {
+function Block({ title, children, delay = 0, accent }: { title: ReactNode; children: ReactNode; delay?: number; accent?: string }) {
   return (
     <section className="fade-up rounded-xl border border-line bg-bg/50 p-4" style={{ animationDelay: `${delay}ms` }}>
       <h3 className="label mb-3 !text-[10px]" style={accent ? { color: accent } : undefined}>{title}</h3>

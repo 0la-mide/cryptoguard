@@ -3,11 +3,13 @@ import { downloadReport, simulate } from './api'
 import { About, GitHubIcon } from './components/About'
 import { AttackerPanel } from './components/AttackerPanel'
 import { ControlPanel, type JourneyStep } from './components/ControlPanel'
+import { GuideDialog } from './components/GuideDialog'
 import { MobileGate } from './components/MobileGate'
 import { PipelinePanel } from './components/PipelinePanel'
 import { DEFAULT_CONFIG, scenario, type ScenarioId } from './lib/content'
 import { GITHUB_URL } from './lib/links'
 import { useMode, type Mode } from './lib/mode'
+import { clearSession, loadSession, saveSession } from './lib/session'
 import type { Focus } from './lib/stages'
 import type { SimConfig, SimResult } from './types'
 
@@ -25,18 +27,20 @@ export default function App() {
 function Lab() {
   const [mode, setMode] = useMode()
   const [tab, setTab] = useState<'lab' | 'about'>('lab')
-  const [config, setConfig] = useState<SimConfig>(DEFAULT_CONFIG)
-  const [activeScenario, setActiveScenario] = useState<ScenarioId | null>(null)
-  const [result, setResult] = useState<SimResult | null>(null)
+  // Restore the last settings and run saved in this browser, if any.
+  const [saved] = useState(loadSession)
+  const [config, setConfig] = useState<SimConfig>(saved?.config ?? DEFAULT_CONFIG)
+  const [activeScenario, setActiveScenario] = useState<ScenarioId | null>(saved?.activeScenario ?? null)
+  const [result, setResult] = useState<SimResult | null>(saved?.result ?? null)
   // True when the settings differ from what the shown result was run with.
-  const [stale, setStale] = useState(false)
+  const [stale, setStale] = useState(saved?.stale ?? false)
+  const [guideOpen, setGuideOpen] = useState(false)
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [focus, setFocus] = useState<Focus>('t_obs')
   const [runKey, setRunKey] = useState(0)
   const [exporting, setExporting] = useState(false)
-  const [autoRan, setAutoRan] = useState(false)
 
   const run = useCallback(async (cfg: SimConfig) => {
     setRunning(true)
@@ -61,18 +65,25 @@ function Lab() {
     }
   }, [])
 
-  // Pro visitors land on a populated dashboard. Beginners start at step 1 of the journey instead.
+  // Simulations only ever start from an explicit click (Run, or a "Try …" button).
+  // Switching modes, choosing a scenario or reloading never starts one.
   useEffect(() => {
-    if (mode !== 'pro' || autoRan || result) return
-    const t = setTimeout(() => {
-      setAutoRan(true) // once only, so a failing backend isn't retried in a loop
-      setActiveScenario('default')
-      void run(DEFAULT_CONFIG)
-    }, 0)
-    return () => clearTimeout(t)
-  }, [mode, autoRan, result, run])
+    saveSession({ config, activeScenario, result, stale })
+  }, [config, activeScenario, result, stale])
 
-  const chooseScenario = (id: ScenarioId, andRun = mode === 'pro') => {
+  const closeGuide = useCallback(() => setGuideOpen(false), [])
+
+  const resetSession = () => {
+    clearSession()
+    setConfig(DEFAULT_CONFIG)
+    setActiveScenario(null)
+    setResult(null)
+    setStale(false)
+    setFocus('t_obs')
+    setGuideOpen(false)
+  }
+
+  const chooseScenario = (id: ScenarioId, andRun = false) => {
     const cfg = scenario(id).config
     setConfig(cfg)
     setActiveScenario(id)
@@ -118,7 +129,12 @@ function Lab() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => setGuideOpen(true)} aria-haspopup="dialog"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12.5px] text-muted transition hover:border-data hover:text-ink">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full border border-current font-mono text-[10px]">i</span>
+            Guide
+          </button>
           <ModeSwitch mode={mode} onChange={setMode} />
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-muted hover:text-ink">
             <GitHubIcon /> <span className="hidden lg:inline">GitHub</span>
@@ -164,6 +180,11 @@ function Lab() {
           </div>
         )}
       </main>
+
+      {guideOpen && (
+        <GuideDialog mode={mode} onClose={closeGuide} onSwitchMode={setMode}
+          onReset={resetSession} hasSaved={!!result || activeScenario !== null} />
+      )}
     </div>
   )
 }

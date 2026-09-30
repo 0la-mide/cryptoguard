@@ -14,6 +14,10 @@ Crypto Op → Raw Timing → [IIR Filter] → [PID Controller] → (WCET pad) �
   scenario cards, a plain explanation beside every setting, advanced settings collapsed, and a "What
   happened" summary with a suggested next scenario. *Pro* is the full technical dashboard. Every
   explanation opens on tap, never on hover alone, so it works on touchscreens.
+- **No surprise runs.** A simulation starts only from an explicit click (Run or a "Try …" button), never from
+  switching modes, choosing a preset or reloading. Settings and the last result are saved in `localStorage`
+  (`src/lib/session.ts`) and restored on return. The header **Guide** explains both modes and can clear the
+  saved session.
 - **Glossary.** Dotted-underlined terms (IIR, PID, WCET, p-value, …) explain themselves in plain English, with an
   everyday analogy, on hover, tap or keyboard focus. The How it works page ends with the full glossary (`src/lib/glossary.ts`).
 - **Backend:** FastAPI. `app/engine.py` is a parameterised port of `original_leakage_analysis.py`, with

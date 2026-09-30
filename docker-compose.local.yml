@@ -1,0 +1,8 @@
+# Run the production containers locally without Traefik:
+#   docker network create traefik   (once; the base file expects it to exist)
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+# then open http://localhost:8080
+services:
+  web:
+    ports:
+      - "8080:80"

@@ -1,0 +1,15 @@
+services:
+  api:
+    build: ./backend
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: 1.5
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      # Only reachable from the VPS itself; the host's Nginx terminates TLS and proxies here.
+      - "127.0.0.1:8081:80"

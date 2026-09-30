@@ -178,10 +178,9 @@ cd frontend && npm run lint && npm run build  # lint, type-check and production 
 
 ### Run the production containers locally (optional)
 
-This needs Docker. The base compose file expects a network named `traefik`, so create it once first:
+This needs Docker. The override publishes the web container only on local port 8080:
 
 ```bash
-docker network create traefik
 docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
 ```
 

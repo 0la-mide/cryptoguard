@@ -6,8 +6,8 @@ Target: `https://cryptoguard.olamide.cloud`
 Internet ─► Traefik :443 (TLS, ACME) ─► web container (Nginx: static + rate-limited /api) ─► api container (FastAPI)
 ```
 
-- Only `web` joins Traefik's network. `api` sits on a private network and is never exposed.
-- No host ports are published. Traefik finds `web` through its Docker labels.
+- Both containers use a project bridge network. The API is never published to the host.
+- No host ports are published in production. Host-networked Traefik reaches `web` through its Docker labels.
 - TLS certificates come from your existing Traefik certificate resolver.
 
 Run these commands on the VPS unless a step says otherwise.
@@ -23,7 +23,7 @@ dig +short cryptoguard.olamide.cloud
 
 ## 2. Read your Traefik settings
 
-CryptoGuard needs three names from your Traefik setup: the Docker network, the HTTPS entrypoint and the certificate resolver.
+CryptoGuard needs two names from your Traefik setup: the HTTPS entrypoint and the certificate resolver.
 The easiest place to find them is the labels on a container Traefik already routes, such as MalwareCNN.
 
 ```bash
@@ -40,7 +40,6 @@ Look for:
 
 | Label | Setting in `.env` |
 |---|---|
-| `traefik.docker.network=…` | `TRAEFIK_NETWORK`. If the label is missing, use the network from `docker inspect malwarecnn --format '{{json .NetworkSettings.Networks}}'` |
 | `…routers.<name>.entrypoints=…` | `TRAEFIK_ENTRYPOINT` |
 | `…routers.<name>.tls.certresolver=…` | `TRAEFIK_CERTRESOLVER` |
 
@@ -52,10 +51,11 @@ Look for:
 cd ~/CryptoGuard && git remote add origin git@github.com:0la-mide/cryptoguard.git && git push -u origin main
 ```
 
-On the VPS:
+On the VPS, using the repository-specific deploy-key alias:
 
 ```bash
-sudo mkdir -p /opt/cryptoguard && sudo chown $USER /opt/cryptoguard && git clone https://github.com/0la-mide/cryptoguard.git /opt/cryptoguard
+mkdir -p /opt/cryptoguard && cd /opt/cryptoguard
+git clone git@github-cryptoguard:0la-mide/cryptoguard.git current
 ```
 
 **Option B: copy directly** from your Mac (replace `user@vps`):
@@ -67,15 +67,15 @@ rsync -av --exclude .venv --exclude node_modules --exclude dist --exclude .git ~
 ## 4. Configure
 
 ```bash
-cd /opt/cryptoguard && cp .env.example .env && nano .env
+cd /opt/cryptoguard/current && cp .env.example .env && nano .env
 ```
 
-Set the three `TRAEFIK_*` values from step 2.
+Set `DOMAIN`, `TRAEFIK_ENTRYPOINT`, and `TRAEFIK_CERTRESOLVER` from step 2.
 
 ## 5. Build and start
 
 ```bash
-cd /opt/cryptoguard && docker compose up -d --build
+cd /opt/cryptoguard/current && docker compose up -d --build
 ```
 
 The first build takes a few minutes (numpy, scipy and matplotlib wheels, plus the React build).
@@ -84,7 +84,7 @@ Traefik picks the container up automatically. It doesn't need a restart.
 ## 6. Verify
 
 ```bash
-docker compose -f /opt/cryptoguard/docker-compose.yml ps
+docker compose -f /opt/cryptoguard/current/docker-compose.yml ps
 ```
 
 ```bash
@@ -101,7 +101,9 @@ The second command should print `{"status":"ok"}`. Then, in a browser:
 ## Updating later
 
 ```bash
-cd /opt/cryptoguard && git pull && docker compose up -d --build
+cd /opt/cryptoguard/current
+git pull --ff-only origin main
+docker compose up -d --build
 ```
 
 (With option B, re-run the rsync and then `docker compose up -d --build`.)
@@ -109,12 +111,10 @@ cd /opt/cryptoguard && git pull && docker compose up -d --build
 ## Troubleshooting
 
 ```bash
-docker compose -f /opt/cryptoguard/docker-compose.yml logs -f --tail=100
+docker compose -f /opt/cryptoguard/current/docker-compose.yml logs -f --tail=100
 ```
 
-- **`network traefik declared as external, but could not be found`:** `TRAEFIK_NETWORK` in `.env` doesn't match. Check `docker network ls`.
-- **Traefik returns 404:** Traefik isn't seeing the router. Check the Traefik container's logs, confirm `web` shares its network
-  (`docker network inspect <network>`), and if Traefik runs with `exposedByDefault=false`, confirm `traefik.enable=true` is set (it is by default here).
+- **Traefik returns 404:** Traefik isn't seeing the router. Check the Traefik logs and confirm `traefik.enable=true` is present. With this VPS's host-networked Traefik, no shared external Docker network is required.
 - **Certificate warning / default Traefik cert:** `TRAEFIK_CERTRESOLVER` is wrong, or DNS wasn't pointing at the VPS when Traefik first tried.
   Fix it, then run `docker compose up -d` again.
 - **Plain http:// doesn't redirect:** HTTP→HTTPS redirects are normally set once, on Traefik's `web` entrypoint. If yours relies on

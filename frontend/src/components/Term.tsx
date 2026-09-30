@@ -82,8 +82,8 @@ export function Term({ k, children }: { k: GlossaryKey; children?: ReactNode }) 
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle() }
         }}
-        className={`cursor-help rounded-sm underline decoration-dotted decoration-[#378ADD]/80 decoration-[1.5px] underline-offset-[3px] transition hover:decoration-[#378ADD] hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data ${
-          pos ? 'text-ink decoration-[#378ADD] decoration-solid' : ''
+        className={`cursor-help rounded-sm underline decoration-dotted decoration-data/80 decoration-[1.5px] underline-offset-[3px] transition hover:decoration-data hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-data ${
+          pos ? 'text-ink decoration-data decoration-solid' : ''
         }`}
       >
         {children ?? g.term}
@@ -95,10 +95,10 @@ export function Term({ k, children }: { k: GlossaryKey; children?: ReactNode }) 
           role="tooltip"
           onPointerEnter={() => window.clearTimeout(closeTimer.current)}
           onPointerLeave={(e) => e.pointerType === 'mouse' && hideSoon()}
-          className="fade-up fixed z-50 rounded-xl border border-line-strong bg-panel-2 p-3.5 text-left shadow-[0_18px_50px_-12px_rgba(0,0,0,.8)]"
+          className="fade-up fixed z-50 rounded-xl border border-line-strong bg-panel-2 p-3.5 text-left shadow-[0_18px_50px_-12px_rgba(0,0,0,.45)]"
           style={{ left: pos.left, top: pos.top, bottom: pos.bottom, width: WIDTH }}
         >
-          <p className="mb-1 flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.12em] text-[#7db6ef]">
+          <p className="mb-1 flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.12em] text-data-hi">
             <span className="h-1.5 w-1.5 rounded-full bg-data" /> {g.term}
           </p>
           <p className="text-[13.5px] leading-relaxed text-ink">{g.plain}</p>

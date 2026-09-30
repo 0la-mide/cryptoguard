@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { explain, THREAT_TEXT, type ScenarioId } from '../lib/content'
 import type { Mode } from '../lib/mode'
 import type { SimResult, ThreatModel } from '../types'
+import { alpha, C } from '../lib/theme'
 import { CountUp } from './CountUp'
 import { Term } from './Term'
 import { Collapsible, PanelHeader } from './ui'
@@ -41,20 +42,21 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
   const plain = mode === 'beginner'
   const obs = result.stages[2]
   const leaked = result.attacker.leaked
-  const tone = leaked ? '#f5825b' : '#1D9E75'
+  const tone = leaked ? C.attack : C.defend
+  const toneTxt = leaked ? C.attackHi : C.defendHi
   const cfg = result.config
 
   const status = (
     <div className="fade-up relative overflow-hidden rounded-xl border p-4"
-      style={{ borderColor: `${tone}66`, background: `linear-gradient(160deg, ${tone}14, transparent 60%)`, animationDelay: plain ? '150ms' : '0ms' }}>
+      style={{ borderColor: alpha(tone, 40), background: `linear-gradient(160deg, ${alpha(tone, 8)}, transparent 60%)`, animationDelay: plain ? '150ms' : '0ms' }}>
       <div className="label mb-3 flex items-center gap-2 !text-ink">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="#f5825b" strokeWidth="1.8">
-          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" fill="#f5825b" />
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="var(--color-attack)" strokeWidth="1.8">
+          <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" fill="var(--color-attack)" />
         </svg>
         Attacker Analysis
       </div>
       <div className="pulse mb-4 inline-flex items-center gap-2 rounded-md px-3 py-1.5 font-mono text-[13px] font-bold tracking-wider"
-        style={{ color: tone, background: `${tone}22`, border: `1px solid ${tone}`, '--pulse': tone } as React.CSSProperties}>
+        style={{ color: toneTxt, background: alpha(tone, 13), border: `1px solid ${tone}`, '--pulse': tone } as React.CSSProperties}>
         {leaked ? '⚠ LEAK DETECTED' : '✓ DEFENSE HOLDING'}
       </div>
       <dl className="grid grid-cols-2 gap-y-2 font-mono text-[13px]">
@@ -86,7 +88,7 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
           <tbody>
             {result.stages.map((s, i) => {
               const internal = i < 2
-              const color = !s.leaked ? '#3fd6a2' : internal ? '#f5c842' : '#ff9d7c'
+              const color = !s.leaked ? C.defendHi : internal ? C.warn : C.attackHi
               const name = plain
                 ? ['Inside server', 'After averaging', 'Attacker sees'][i]
                 : s.stage === 't_obs' ? 'T_obs' : s.label.replace(' Timing', '').replace(' Output', '')
@@ -128,7 +130,7 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
           <dt className="text-muted"><Term k="samples">Samples used</Term></dt>
           <dd className="text-right tabular-nums">{obs.n}</dd>
           <dt className="text-muted"><Term k="distinguishable" /></dt>
-          <dd className="text-right font-bold" style={{ color: obs.distinguishable ? '#ff9d7c' : '#3fd6a2' }}>
+          <dd className="text-right font-bold" style={{ color: obs.distinguishable ? C.attackHi : C.defendHi }}>
             {obs.distinguishable ? 'YES' : 'NO'}
           </dd>
           {result.attacker.samples_to_break && (
@@ -142,7 +144,7 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
       </Block>
 
       {result.recommendations.length > 0 && (
-        <Block title={leaked ? 'Recommendations' : 'Caveat'} delay={450} accent={leaked ? '#f5825b' : '#f5c842'}>
+        <Block title={leaked ? 'Recommendations' : 'Caveat'} delay={450} accent={leaked ? C.attackHi : C.warn}>
           <ul className="space-y-2">
             {result.recommendations.map((r) => (
               <li key={r} className="flex gap-2 text-[12.5px] leading-snug">
@@ -170,11 +172,11 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
   const e = explain(result)
   return (
     <>
-      <section className="fade-up rounded-xl border border-data/50 bg-data/5 p-4 shadow-[0_0_0_3px_rgba(55,138,221,.12)]" aria-live="polite">
-        <p className="label mb-1.5 flex items-center gap-2 !text-[#7db6ef]">
+      <section className="fade-up rounded-xl border border-data/50 bg-data/5 p-4 ring-3 ring-data/12" aria-live="polite">
+        <p className="label mb-1.5 flex items-center gap-2 !text-data-hi">
           <span className="font-mono">Step 3</span> What happened
         </p>
-        <h3 className="text-[17px] font-semibold leading-snug" style={{ color: leaked ? '#ff9d7c' : '#3fd6a2' }}>{e.headline}</h3>
+        <h3 className="text-[17px] font-semibold leading-snug" style={{ color: leaked ? C.attackHi : C.defendHi }}>{e.headline}</h3>
         <p className="mt-2 text-[13px] leading-relaxed text-ink/90">{e.body}</p>
         {e.why && <p className="mt-2 text-[12.5px] leading-relaxed text-muted"><b className="text-ink/80">Why: </b>{e.why}</p>}
         {e.next && (
@@ -196,7 +198,7 @@ function Report({ mode, result, runKey, onTryNext }: { mode: Mode; result: SimRe
 function ThreatCard({ model, plain }: { model: ThreatModel; plain: boolean }) {
   const [open, setOpen] = useState(!plain)
   const t = THREAT_TEXT[model]
-  const color = model === 'rogue_node' ? '#f5825b' : '#378ADD'
+  const color = model === 'rogue_node' ? C.attack : C.bit0
   return (
     <div className="fade-up overflow-hidden rounded-xl border border-line" style={{ animationDelay: '600ms' }}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open}

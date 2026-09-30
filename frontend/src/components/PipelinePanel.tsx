@@ -1,6 +1,6 @@
 import type { Mode } from '../lib/mode'
 import { stageTones, type Focus } from '../lib/stages'
-import { C, toneColor, type Tone } from '../lib/theme'
+import { alpha, C, toneColor, type Tone } from '../lib/theme'
 import type { SimConfig, SimResult } from '../types'
 import { Histogram, Scatter } from './Charts'
 import { PanelHeader } from './ui'
@@ -141,13 +141,13 @@ function IllustratedFlow() {
   const steps: [string, string, string][] = [
     ['Secret task', 'bit 0 or 1', C.bit0],
     ['Defense', 'adds delay', C.defend],
-    ['Response', 'timed', '#e6e6f0'],
+    ['Response', 'timed', C.ink],
   ]
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 rounded-lg border border-line bg-panel/60 p-4">
       {steps.map(([t, s, c]) => (
         <div key={t} className="flex items-center gap-2">
-          <div className="rounded-lg border bg-bg px-3 py-2 text-center" style={{ borderColor: `${c}88` }}>
+          <div className="rounded-lg border bg-bg px-3 py-2 text-center" style={{ borderColor: alpha(c, 53) }}>
             <div className="text-[13px] font-semibold">{t}</div>
             <div className="font-mono text-[10.5px]" style={{ color: c }}>{s}</div>
           </div>
@@ -194,7 +194,7 @@ function Diagram({ mode, result, config, running, focus, onFocus }: Omit<Props, 
   const eyeX = VW - 34
   const gap = (eyeX - 40 - 16 - nodes.length * NW) / (nodes.length - 1)
   const nx = (i: number) => 16 + i * (NW + gap)
-  const colorOf = (t: Node['tone']) => (t === 'idle' ? '#34345a' : t === 'data' ? C.bit0 : toneColor(t))
+  const colorOf = (t: Node['tone']) => (t === 'idle' ? C.idle : t === 'data' ? C.bit0 : toneColor(t))
   const attackerLeaks = result?.attacker.leaked
   const iirI = nodes.findIndex((n) => n.id === 'iir')
   const pidI = nodes.findIndex((n) => n.id === 'pid')
@@ -205,7 +205,7 @@ function Diagram({ mode, result, config, running, focus, onFocus }: Omit<Props, 
       <svg viewBox={`0 0 ${VW} ${VH}`} className="w-full" role="group" aria-label="Defense pipeline diagram">
         <defs>
           <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M0,0 L10,5 L0,10 z" fill="#5c5c78" />
+            <path d="M0,0 L10,5 L0,10 z" fill={C.axis} />
           </marker>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="5" />
@@ -213,20 +213,20 @@ function Diagram({ mode, result, config, running, focus, onFocus }: Omit<Props, 
         </defs>
 
         {nodes.slice(0, -1).map((_, i) => (
-          <line key={i} x1={nx(i) + NW} x2={nx(i + 1) - 3} y1={CY} y2={CY} stroke="#34345a" strokeWidth={1.5} markerEnd="url(#arrow)" />
+          <line key={i} x1={nx(i) + NW} x2={nx(i + 1) - 3} y1={CY} y2={CY} stroke={C.idle} strokeWidth={1.5} markerEnd="url(#arrow)" />
         ))}
         <line x1={nx(nodes.length - 1) + NW + 3} x2={eyeX - 24} y1={CY} y2={CY}
-          stroke={attackerLeaks ? C.attack : '#34345a'} strokeWidth={1.5} strokeDasharray="3 3" />
+          stroke={attackerLeaks ? C.attack : C.idle} strokeWidth={1.5} strokeDasharray="3 3" />
 
         {/* feedback loops */}
         <path d={`M ${nx(iirI) + NW * 0.72} ${CY - NH / 2} C ${nx(iirI) + NW * 0.72} ${CY - 70}, ${nx(iirI) + NW * 0.28} ${CY - 70}, ${nx(iirI) + NW * 0.28} ${CY - NH / 2 - 2}`}
           fill="none" stroke={colorOf(nodes[iirI].tone)} strokeWidth={1.3} className="dash-flow" markerEnd="url(#arrow)" />
-        <text x={nx(iirI) + NW / 2} y={CY - 60} textAnchor="middle" fontSize={10} fill="#8c8ca8" fontFamily="JetBrains Mono">
+        <text x={nx(iirI) + NW / 2} y={CY - 60} textAnchor="middle" fontSize={10} fill={C.muted} fontFamily="JetBrains Mono">
           {plain ? 'remembers past' : 'y[n−1]'}
         </text>
         <path d={`M ${nx(pidI) + NW * 0.75} ${CY + NH / 2} C ${nx(pidI) + NW * 0.75} ${CY + 60}, ${nx(pidI) + NW * 0.25} ${CY + 60}, ${nx(pidI) + NW * 0.25} ${CY + NH / 2 + 2}`}
           fill="none" stroke={colorOf(nodes[pidI].tone)} strokeWidth={1.3} className="dash-flow" markerEnd="url(#arrow)" />
-        <text x={nx(pidI) + NW / 2} y={CY + 66} textAnchor="middle" fontSize={10} fill="#8c8ca8" fontFamily="JetBrains Mono">
+        <text x={nx(pidI) + NW / 2} y={CY + 66} textAnchor="middle" fontSize={10} fill={C.muted} fontFamily="JetBrains Mono">
           {plain ? 'corrects error' : 'e = T_ref − y'}
         </text>
 
@@ -245,15 +245,15 @@ function Diagram({ mode, result, config, running, focus, onFocus }: Omit<Props, 
               onClick={() => onFocus(n.id)}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onFocus(n.id))}>
               {n.tone !== 'idle' && <rect width={NW} height={NH} rx={9} fill={c} opacity={on ? 0.45 : 0.18} filter="url(#glow)" />}
-              <rect width={NW} height={NH} rx={9} fill="#141425" stroke={c} strokeWidth={on ? 2 : 1.2} />
-              <text x={NW / 2} y={21} textAnchor="middle" fontSize={12.5} fontWeight={600} fill={n.tone === 'idle' ? '#8c8ca8' : '#e6e6f0'} fontFamily="Inter">{n.title}</text>
-              <text x={NW / 2} y={37} textAnchor="middle" fontSize={9.5} fill={n.tone === 'idle' ? '#5c5c78' : c} fontFamily="JetBrains Mono">{n.sub}</text>
+              <rect width={NW} height={NH} rx={9} fill={C.panel} stroke={c} strokeWidth={on ? 2 : 1.2} />
+              <text x={NW / 2} y={21} textAnchor="middle" fontSize={12.5} fontWeight={600} fill={n.tone === 'idle' ? C.muted : C.ink} fontFamily="Inter">{n.title}</text>
+              <text x={NW / 2} y={37} textAnchor="middle" fontSize={9.5} fill={n.tone === 'idle' ? C.axis : c} fontFamily="JetBrains Mono">{n.sub}</text>
             </g>
           )
         })}
 
         <g transform={`translate(${eyeX} ${CY})`}>
-          <circle r={22} fill="#141425" stroke={attackerLeaks ? C.attack : attackerLeaks === false ? C.defend : '#34345a'} strokeWidth={1.5} />
+          <circle r={22} fill={C.panel} stroke={attackerLeaks ? C.attack : attackerLeaks === false ? C.defend : C.idle} strokeWidth={1.5} />
           {attackerLeaks && <circle r={22} fill="none" stroke={C.attack} strokeWidth={1.5} opacity={0.6}>
             <animate attributeName="r" from="22" to="34" dur="1.6s" repeatCount="indefinite" />
             <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />

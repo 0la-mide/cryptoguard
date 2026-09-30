@@ -47,12 +47,12 @@ function GuidedPanel({ config, onChange, onRun, running, progress, stageText, ac
             return (
               <button key={s.id} type="button" role="radio" aria-checked={on} onClick={() => onScenario(s.id)}
                 className={`w-full rounded-lg border p-3 text-left transition ${
-                  on ? 'border-data bg-data/10 shadow-[0_0_0_1px_rgba(55,138,221,.4)]' : 'border-line hover:border-line-strong'
+                  on ? 'border-data bg-data/10 ring-1 ring-data/40' : 'border-line hover:border-line-strong'
                 }`}>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13.5px] font-semibold">{s.title}</span>
                   <span className={`rounded px-1.5 py-0.5 font-mono text-[9.5px] ${
-                    s.config.threat_model === 'rogue_node' ? 'bg-attack/15 text-attack-hi' : 'bg-data/15 text-[#7db6ef]'
+                    s.config.threat_model === 'rogue_node' ? 'bg-attack/15 text-attack-hi' : 'bg-data/15 text-data-hi'
                   }`}>
                     {s.config.threat_model === 'rogue_node' ? 'insider' : 'outsider'}
                   </span>
@@ -92,7 +92,7 @@ function Stepper({ step }: { step: JourneyStep }) {
         return (
           <li key={s} className="flex flex-1 items-center gap-1.5" aria-current={current ? 'step' : undefined}>
             <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-              done ? 'border-defend bg-defend text-[#04140e]' : current ? 'border-data text-ink' : 'border-line-strong text-dim'
+              done ? 'border-defend bg-defend text-on-accent' : current ? 'border-data text-ink' : 'border-line-strong text-dim'
             }`}>
               {done ? '✓' : n}
             </span>
@@ -195,8 +195,8 @@ function Settings({ mode, config, onChange }: { mode: Mode; config: SimConfig; o
                 className={`rounded-md px-2 py-2 font-mono text-[11px] font-medium tracking-wide transition ${
                   on
                     ? id === 'rogue_node'
-                      ? 'bg-attack/15 text-attack-hi shadow-[inset_0_0_0_1px_rgba(245,130,91,.5)]'
-                      : 'bg-data/15 text-[#7db6ef] shadow-[inset_0_0_0_1px_rgba(55,138,221,.5)]'
+                      ? 'bg-attack/15 text-attack-hi ring-1 ring-inset ring-attack/50'
+                      : 'bg-data/15 text-data-hi ring-1 ring-inset ring-data/50'
                     : 'text-muted hover:text-ink'
                 }`}>
                 {name}
@@ -259,7 +259,7 @@ function ParamLabel({ mode, param, right, htmlFor }: { mode: Mode; param: ParamK
   )
 }
 
-const ACCENTS = { defend: '#1D9E75', attack: '#f5825b', data: '#378ADD' }
+const ACCENTS = { defend: 'var(--color-defend)', attack: 'var(--color-attack)', data: 'var(--color-data)' }
 
 function Slider({ mode, param, unit, value, min, max, step, format, onChange, accent = 'defend', scale }: {
   mode: Mode
@@ -321,13 +321,13 @@ function RunButton({ onRun, running, progress, stageText, label, disabled }: {
     <button type="button" onClick={onRun} disabled={running || disabled}
       className={`group relative w-full overflow-hidden rounded-lg py-3 font-mono text-[13px] font-bold tracking-[0.18em] transition ${
         disabled && !running
-          ? 'cursor-not-allowed bg-panel-2 text-dim shadow-[inset_0_0_0_1px_#34345a]'
-          : 'bg-defend text-[#04140e] shadow-[0_0_24px_-4px_rgba(29,158,117,.6)] hover:bg-defend-hi disabled:cursor-wait'
+          ? 'cursor-not-allowed bg-panel-2 text-dim ring-1 ring-inset ring-line-strong'
+          : 'bg-defend text-on-accent shadow-[0_0_24px_-4px_var(--color-defend)] hover:bg-defend-hi disabled:cursor-wait'
       }`}>
       {running ? (
         <>
           <span className="absolute inset-y-0 left-0 bg-defend-hi/60 transition-[width] duration-200" style={{ width: `${progress}%` }} />
-          <span className="relative text-[#04140e]">{stageText}</span>
+          <span className="relative text-on-accent">{stageText}</span>
         </>
       ) : (
         <span className="relative">{label}</span>

@@ -1,4 +1,4 @@
-import { C, toneColor, type Tone } from '../lib/theme'
+import { alpha, C, toneColor, toneText, type Tone } from '../lib/theme'
 import type { StageResult } from '../types'
 
 function ticks(lo: number, hi: number, n = 4) {
@@ -40,7 +40,7 @@ export function Histogram({ stage, title, subtitle, setpoint, threshold, tone, d
       style={{
         animationDelay: `${delay}ms`,
         borderColor: focused ? color : undefined,
-        boxShadow: focused ? `0 0 0 1px ${color}40, 0 0 28px -10px ${color}` : undefined,
+        boxShadow: focused ? `0 0 0 1px ${alpha(color, 25)}, 0 0 28px -10px ${color}` : undefined,
       }}>
       <figcaption className="mb-2">
         <div className="text-[12.5px] font-medium leading-tight">{title}</div>
@@ -50,7 +50,7 @@ export function Histogram({ stage, title, subtitle, setpoint, threshold, tone, d
             gap <span style={{ color }}>{stage.gap_ms.toFixed(2)}ms</span>
           </span>
           <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider"
-            style={{ color, background: `${color}1f`, border: `1px solid ${color}55` }}>
+            style={{ color: toneText(tone), background: alpha(color, 12), border: `1px solid ${alpha(color, 33)}` }}>
             {tone === 'defend' ? '✓ SECURE' : tone === 'warn' ? '◐ LEAKING' : '⚠ LEAK'}
           </span>
         </div>

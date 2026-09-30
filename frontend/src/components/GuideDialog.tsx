@@ -29,7 +29,7 @@ export function GuideDialog({ mode, onClose, onSwitchMode, onReset, hasSaved }: 
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
       onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div ref={dialog} role="dialog" aria-modal="true" aria-labelledby="guide-title" tabIndex={-1}
-        className="fade-up flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line-strong bg-panel shadow-[0_30px_80px_-20px_rgba(0,0,0,.9)] outline-none">
+        className="fade-up flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line-strong bg-panel shadow-[0_30px_80px_-20px_rgba(0,0,0,.5)] outline-none">
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 pt-5 pb-4">
           <div>
             <p className="label mb-1 !text-defend-hi">Guide</p>

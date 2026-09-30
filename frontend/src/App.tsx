@@ -7,9 +7,10 @@ import { GuideDialog } from './components/GuideDialog'
 import { MobileGate } from './components/MobileGate'
 import { PipelinePanel } from './components/PipelinePanel'
 import { DEFAULT_CONFIG, scenario, type ScenarioId } from './lib/content'
-import { GITHUB_URL } from './lib/links'
+import { GITHUB_URL, PORTFOLIO_URL } from './lib/links'
 import { useMode, type Mode } from './lib/mode'
 import { clearSession, loadSession, saveSession } from './lib/session'
+import { useTheme, type Theme } from './lib/themeMode'
 import type { Focus } from './lib/stages'
 import type { SimConfig, SimResult } from './types'
 
@@ -26,6 +27,7 @@ export default function App() {
 
 function Lab() {
   const [mode, setMode] = useMode()
+  const [theme, setTheme] = useTheme()
   const [tab, setTab] = useState<'lab' | 'about'>('lab')
   // Restore the last settings and run saved in this browser, if any.
   const [saved] = useState(loadSession)
@@ -109,8 +111,15 @@ function Lab() {
   return (
     <div className="bg-grid flex h-full min-h-[640px] flex-col">
       <header className="flex items-center justify-between gap-4 border-b border-line bg-bg/80 px-5 py-3 backdrop-blur">
-        <div className="flex items-center gap-4">
-          <a href="/" className="flex items-center gap-2.5" aria-label="CryptoGuard home">
+        <div className="flex items-center gap-3">
+          <a href={PORTFOLIO_URL} aria-label="Home: back to olamide.cloud"
+            className="flex items-center gap-1.5 rounded-lg border border-line bg-panel px-2.5 py-1.5 text-[12.5px] text-muted transition hover:border-data hover:text-ink">
+            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden>
+              <path d="M2.5 7.2 8 2.5l5.5 4.7V13a.5.5 0 0 1-.5.5H10V9.5H6v4H3a.5.5 0 0 1-.5-.5z" />
+            </svg>
+            <span className="hidden xl:inline">Home</span>
+          </a>
+          <a href="/" className="flex items-center gap-2.5" aria-label="CryptoGuard: reload the lab">
             <img src="/favicon.svg" alt="" className="h-7 w-7" />
             <span className="font-mono text-[15px] font-bold tracking-[0.2em]">
               CRYPTO<span className="text-defend-hi">GUARD</span>
@@ -123,7 +132,7 @@ function Lab() {
         <nav className="flex items-center gap-1 rounded-lg border border-line bg-panel p-1" aria-label="Sections">
           {([['lab', 'Lab'], ['about', 'How it works']] as const).map(([id, name]) => (
             <button key={id} type="button" onClick={() => setTab(id)} aria-current={tab === id ? 'page' : undefined}
-              className={`rounded-md px-3 py-1 text-[13px] transition ${tab === id ? 'bg-panel-2 text-ink shadow-[inset_0_0_0_1px_#34345a]' : 'text-muted hover:text-ink'}`}>
+              className={`rounded-md px-3 py-1 text-[13px] transition ${tab === id ? 'bg-panel-2 text-ink ring-1 ring-inset ring-line-strong' : 'text-muted hover:text-ink'}`}>
               {name}
             </button>
           ))}
@@ -136,6 +145,7 @@ function Lab() {
             Guide
           </button>
           <ModeSwitch mode={mode} onChange={setMode} />
+          <ThemeToggle theme={theme} onChange={setTheme} />
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-muted hover:text-ink">
             <GitHubIcon /> <span className="hidden lg:inline">GitHub</span>
           </a>
@@ -198,7 +208,7 @@ function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
           <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onChange(id)}
             className={`rounded-md px-2.5 py-1 font-mono text-[11.5px] transition ${
               on
-                ? id === 'pro' ? 'bg-attack/15 text-attack-hi shadow-[inset_0_0_0_1px_rgba(245,130,91,.45)]' : 'bg-data/15 text-[#7db6ef] shadow-[inset_0_0_0_1px_rgba(55,138,221,.45)]'
+                ? id === 'pro' ? 'bg-attack/15 text-attack-hi ring-1 ring-inset ring-attack/45' : 'bg-data/15 text-data-hi ring-1 ring-inset ring-data/45'
                 : 'text-muted hover:text-ink'
             }`}>
             {name}
@@ -206,5 +216,25 @@ function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
         )
       })}
     </div>
+  )
+}
+
+function ThemeToggle({ theme, onChange }: { theme: Theme; onChange: (t: Theme) => void }) {
+  const dark = theme === 'dark'
+  return (
+    <button type="button" role="switch" aria-checked={!dark} onClick={() => onChange(dark ? 'light' : 'dark')}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-panel text-muted transition hover:border-data hover:text-ink">
+      {dark ? (
+        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden>
+          <circle cx="8" cy="8" r="3" />
+          <path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden>
+          <path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1z" />
+        </svg>
+      )}
+    </button>
   )
 }

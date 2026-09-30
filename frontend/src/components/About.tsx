@@ -14,7 +14,7 @@ export function About() {
           </h1>
           <p className="inline-flex items-center gap-2 rounded-lg border border-data/40 bg-data/10 px-3 py-2 text-[13px] text-ink/90">
             <span className="font-mono text-data">Tip</span>
-            Hover over, or tap, any <span className="underline decoration-dotted decoration-[#378ADD] decoration-[1.5px] underline-offset-[3px]">dotted word</span> for a plain-English explanation.
+            Hover over, or tap, any <span className="underline decoration-dotted decoration-data decoration-[1.5px] underline-offset-[3px]">dotted word</span> for a plain-English explanation.
           </p>
         </header>
 
@@ -47,18 +47,18 @@ export function About() {
           </p>
           <StaticPipeline />
           <div className="grid gap-3 md:grid-cols-3">
-            <Explain color="#378ADD" title={<Term k="iir" />} formula="y[n] = α·x[n] + (1−α)·y[n−1]">
+            <Explain color="var(--color-data)" title={<Term k="iir" />} formula="y[n] = α·x[n] + (1−α)·y[n−1]">
               A first-order <Term k="lowPass">low-pass</Term> filter (an{' '}
               <Term k="ema">exponential moving average</Term>) that estimates the operation's typical time.
               Low <Term k="alpha">α</Term> smooths heavily; high α tracks each operation.
             </Explain>
-            <Explain color="#1D9E75" title={<Term k="pid" />} formula="delay = max(0, Kp·e + Ki·Σe + Kd·Δe)">
+            <Explain color="var(--color-defend)" title={<Term k="pid" />} formula="delay = max(0, Kp·e + Ki·Σe + Kd·Δe)">
               Injects a delay to push the filtered time toward the <Term k="setpoint">setpoint T_ref</Term>, using
               the <Term k="error">error e</Term> and three gains (<Term k="kp">Kp</Term>, <Term k="ki">Ki</Term>,{' '}
               <Term k="kd">Kd</Term>). The delay is added to the <Term k="raw">raw</Term> time:{' '}
               <code className="font-mono">T_obs = raw + delay</code>.
             </Explain>
-            <Explain color="#f5c842" title={<Term k="wcetPadding" />} formula="T_obs = max(T_obs, budget)">
+            <Explain color="var(--color-warn)" title={<Term k="wcetPadding" />} formula="T_obs = max(T_obs, budget)">
               Holds every operation until a <Term k="wcet">worst-case</Term> budget. If nothing{' '}
               <Term k="overrun">overruns</Term>, every operation takes identical time: a{' '}
               <Term k="deterministic">deterministic</Term> guarantee, paid for in <Term k="latency">latency</Term>.
@@ -172,17 +172,17 @@ function Explain({ color, title, formula, children }: { color: string; title: Re
 
 function StaticPipeline() {
   const steps: { k: GlossaryKey; t: string; s: string; c: string }[] = [
-    { k: 'cryptoOp', t: 'Crypto Op', s: 'uses the secret', c: '#378ADD' },
-    { k: 'raw', t: 'Raw Timing', s: 'leaks internally', c: '#f5825b' },
-    { k: 'iir', t: 'IIR Filter', s: 'running average', c: '#378ADD' },
-    { k: 'pid', t: 'PID Controller', s: 'adds delay', c: '#1D9E75' },
-    { k: 'tObs', t: 'T_obs', s: 'what is measured', c: '#e6e6f0' },
+    { k: 'cryptoOp', t: 'Crypto Op', s: 'uses the secret', c: 'var(--color-data)' },
+    { k: 'raw', t: 'Raw Timing', s: 'leaks internally', c: 'var(--color-attack)' },
+    { k: 'iir', t: 'IIR Filter', s: 'running average', c: 'var(--color-data)' },
+    { k: 'pid', t: 'PID Controller', s: 'adds delay', c: 'var(--color-defend)' },
+    { k: 'tObs', t: 'T_obs', s: 'what is measured', c: 'var(--color-ink)' },
   ]
   return (
     <div className="panel flex flex-wrap items-center justify-center gap-2 p-5">
       {steps.map((st, i) => (
         <div key={st.t} className="flex items-center gap-2">
-          <div className="rounded-lg border bg-bg px-3 py-2 text-center" style={{ borderColor: `${st.c}88` }}>
+          <div className="rounded-lg border bg-bg px-3 py-2 text-center" style={{ borderColor: `color-mix(in srgb, ${st.c} 53%, transparent)` }}>
             <div className="text-[13px] font-semibold"><Term k={st.k}>{st.t}</Term></div>
             <div className="font-mono text-[10.5px]" style={{ color: st.c }}>{st.s}</div>
           </div>

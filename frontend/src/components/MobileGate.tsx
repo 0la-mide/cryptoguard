@@ -1,4 +1,5 @@
 import { useSyncExternalStore, type ReactNode } from 'react'
+import { PORTFOLIO_URL } from '../lib/links'
 
 // Phones get a notice; tablets (≥768px) and desktops get the lab.
 const QUERY = '(max-width: 767px)'
@@ -18,10 +19,10 @@ export function MobileGate({ children }: { children: ReactNode }) {
       <div className="panel fade-up w-full max-w-sm p-7 text-center">
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-line-strong bg-panel-2">
           <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="4" y="9" width="30" height="21" rx="2.5" stroke="#378ADD" strokeWidth="2.4" />
-            <path d="M13 36h12M19 30v6" stroke="#378ADD" strokeWidth="2.4" />
-            <rect x="32" y="17" width="12" height="22" rx="2.5" fill="#0f0f1a" stroke="#1D9E75" strokeWidth="2.4" />
-            <path d="M36.5 35h3" stroke="#1D9E75" strokeWidth="2.4" />
+            <rect x="4" y="9" width="30" height="21" rx="2.5" stroke="var(--color-data)" strokeWidth="2.4" />
+            <path d="M13 36h12M19 30v6" stroke="var(--color-data)" strokeWidth="2.4" />
+            <rect x="32" y="17" width="12" height="22" rx="2.5" fill="var(--color-bg)" stroke="var(--color-defend)" strokeWidth="2.4" />
+            <path d="M36.5 35h3" stroke="var(--color-defend)" strokeWidth="2.4" />
           </svg>
         </div>
         <p className="label mb-2 text-defend-hi">CryptoGuard</p>
@@ -34,6 +35,10 @@ export function MobileGate({ children }: { children: ReactNode }) {
         <div className="rounded-lg border border-line bg-bg px-4 py-3 font-mono text-[13px] text-data">
           cryptoguard.olamide.cloud
         </div>
+        <a href={PORTFOLIO_URL}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-defend py-3 font-mono text-[13px] font-bold tracking-[0.12em] text-on-accent transition active:bg-defend-hi">
+          ← GO BACK
+        </a>
         <p className="mt-5 font-mono text-[11px] text-dim">
           <span className="blink text-attack">■</span> min width 768px
         </p>

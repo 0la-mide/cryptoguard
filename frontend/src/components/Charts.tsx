@@ -1,17 +1,5 @@
+import { C, toneColor, type Tone } from '../lib/theme'
 import type { StageResult } from '../types'
-
-export const C = {
-  bit0: '#378ADD',
-  bit1: '#f5825b',
-  defend: '#1D9E75',
-  attack: '#f5825b',
-  warn: '#f5c842',
-  grid: '#26263f',
-  axis: '#5c5c78',
-}
-
-export type Tone = 'attack' | 'warn' | 'defend'
-export const toneColor = (t: Tone) => (t === 'attack' ? C.attack : t === 'warn' ? C.warn : C.defend)
 
 function ticks(lo: number, hi: number, n = 4) {
   const span = hi - lo
@@ -25,8 +13,10 @@ function ticks(lo: number, hi: number, n = 4) {
 
 const W = 300, H = 150, PAD = { l: 8, r: 8, t: 8, b: 22 }
 
-export function Histogram({ stage, setpoint, threshold, tone, delay, focused, runKey }: {
+export function Histogram({ stage, title, subtitle, setpoint, threshold, tone, delay, focused, runKey }: {
   stage: StageResult
+  title: string
+  subtitle?: string
   setpoint: number
   threshold: number
   tone: Tone
@@ -52,17 +42,18 @@ export function Histogram({ stage, setpoint, threshold, tone, delay, focused, ru
         borderColor: focused ? color : undefined,
         boxShadow: focused ? `0 0 0 1px ${color}40, 0 0 28px -10px ${color}` : undefined,
       }}>
-      <figcaption className="mb-2 flex items-start justify-between gap-2">
-        <div>
-          <div className="text-[12.5px] font-medium">{stage.label}</div>
-          <div className="font-mono text-[11px] text-dim">
+      <figcaption className="mb-2">
+        <div className="text-[12.5px] font-medium leading-tight">{title}</div>
+        {subtitle && <div className="mt-0.5 text-[11px] leading-snug text-dim">{subtitle}</div>}
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="font-mono text-[11px] text-dim">
             gap <span style={{ color }}>{stage.gap_ms.toFixed(2)}ms</span>
-          </div>
+          </span>
+          <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider"
+            style={{ color, background: `${color}1f`, border: `1px solid ${color}55` }}>
+            {tone === 'defend' ? '✓ SECURE' : tone === 'warn' ? '◐ LEAKING' : '⚠ LEAK'}
+          </span>
         </div>
-        <span className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider"
-          style={{ color, background: `${color}1f`, border: `1px solid ${color}55` }}>
-          {tone === 'defend' ? '✓ SECURE' : tone === 'warn' ? '◐ LEAKING' : '⚠ LEAK'}
-        </span>
       </figcaption>
 
       <svg key={runKey} viewBox={`0 0 ${W} ${H}`} className="w-full" role="img"

@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { downloadReport, simulate } from './api'
-import { About, GITHUB_URL, GitHubIcon } from './components/About'
+import { About, GitHubIcon } from './components/About'
 import { AttackerPanel } from './components/AttackerPanel'
-import { ControlPanel } from './components/ControlPanel'
+import { ControlPanel, type JourneyStep } from './components/ControlPanel'
 import { MobileGate } from './components/MobileGate'
-import { PipelinePanel, type Focus } from './components/PipelinePanel'
-import { DEFAULT_CONFIG, PRESETS } from './presets'
+import { PipelinePanel } from './components/PipelinePanel'
+import { DEFAULT_CONFIG, scenario, type ScenarioId } from './lib/content'
+import { GITHUB_URL } from './lib/links'
+import { useMode, type Mode } from './lib/mode'
+import type { Focus } from './lib/stages'
 import type { SimConfig, SimResult } from './types'
 
 const STAGES = ['GENERATING BITS', 'RAW TIMING', 'IIR FILTER', 'PID CONTROL', 'ATTACKER ANALYSIS']
@@ -20,20 +23,22 @@ export default function App() {
 }
 
 function Lab() {
+  const [mode, setMode] = useMode()
   const [tab, setTab] = useState<'lab' | 'about'>('lab')
   const [config, setConfig] = useState<SimConfig>(DEFAULT_CONFIG)
-  const [activePreset, setActivePreset] = useState<string | null>('default')
+  const [activeScenario, setActiveScenario] = useState<ScenarioId | null>(null)
   const [result, setResult] = useState<SimResult | null>(null)
+  // True when the settings differ from what the shown result was run with.
+  const [stale, setStale] = useState(false)
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [focus, setFocus] = useState<Focus>('t_obs')
   const [runKey, setRunKey] = useState(0)
   const [exporting, setExporting] = useState(false)
-  const configRef = useRef(config)
-  configRef.current = config
+  const [autoRan, setAutoRan] = useState(false)
 
-  const run = useCallback(async (cfg?: SimConfig) => {
+  const run = useCallback(async (cfg: SimConfig) => {
     setRunning(true)
     setError(null)
     setProgress(0)
@@ -42,12 +47,11 @@ function Lab() {
       setProgress(Math.min(92, ((performance.now() - start) / MIN_RUN_MS) * 100))
     }, 60)
     try {
-      const [res] = await Promise.all([
-        simulate(cfg ?? configRef.current),
-        new Promise((r) => setTimeout(r, MIN_RUN_MS)),
-      ])
+      const [res] = await Promise.all([simulate(cfg), new Promise((r) => setTimeout(r, MIN_RUN_MS))])
       setProgress(100)
       setResult(res)
+      setStale(false)
+      setFocus('t_obs')
       setRunKey((k) => k + 1)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Simulation failed')
@@ -57,15 +61,23 @@ function Lab() {
     }
   }, [])
 
-  // First impression: show a populated lab straight away.
-  useEffect(() => { void run(DEFAULT_CONFIG) }, [run])
+  // Pro visitors land on a populated dashboard. Beginners start at step 1 of the journey instead.
+  useEffect(() => {
+    if (mode !== 'pro' || autoRan || result) return
+    const t = setTimeout(() => {
+      setAutoRan(true) // once only, so a failing backend isn't retried in a loop
+      setActiveScenario('default')
+      void run(DEFAULT_CONFIG)
+    }, 0)
+    return () => clearTimeout(t)
+  }, [mode, autoRan, result, run])
 
-  const applyPreset = (id: string) => {
-    const p = PRESETS.find((x) => x.id === id)
-    if (!p) return
-    setConfig(p.config)
-    setActivePreset(id)
-    void run(p.config)
+  const chooseScenario = (id: ScenarioId, andRun = mode === 'pro') => {
+    const cfg = scenario(id).config
+    setConfig(cfg)
+    setActiveScenario(id)
+    setStale(true)
+    if (andRun) void run(cfg)
   }
 
   const exportPdf = async () => {
@@ -80,6 +92,7 @@ function Lab() {
     }
   }
 
+  const step: JourneyStep = result && !stale && !running ? 3 : activeScenario || stale || result ? 2 : 1
   const stageText = STAGES[Math.min(STAGES.length - 1, Math.floor((progress / 100) * STAGES.length))]
 
   return (
@@ -92,8 +105,8 @@ function Lab() {
               CRYPTO<span className="text-defend-hi">GUARD</span>
             </span>
           </a>
-          <span className="hidden h-5 w-px bg-line-strong lg:block" />
-          <span className="hidden text-[13px] text-muted lg:block">Side-Channel Timing Attack Lab</span>
+          <span className="hidden h-5 w-px bg-line-strong xl:block" />
+          <span className="hidden text-[13px] text-muted xl:block">Side-Channel Timing Attack Lab</span>
         </div>
 
         <nav className="flex items-center gap-1 rounded-lg border border-line bg-panel p-1" aria-label="Sections">
@@ -106,12 +119,9 @@ function Lab() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <span className="hidden items-center gap-2 font-mono text-[11px] text-muted xl:flex">
-            <span className={`h-1.5 w-1.5 rounded-full ${running ? 'blink bg-warn' : error ? 'bg-attack' : 'bg-defend-hi'}`} />
-            {running ? 'RUNNING' : error ? 'ERROR' : 'LIVE'}
-          </span>
+          <ModeSwitch mode={mode} onChange={setMode} />
           <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-[13px] text-muted hover:text-ink">
-            <GitHubIcon /> GitHub
+            <GitHubIcon /> <span className="hidden lg:inline">GitHub</span>
           </a>
         </div>
       </header>
@@ -128,29 +138,52 @@ function Lab() {
           <About />
         ) : (
           <div className="h-full overflow-y-auto lg:overflow-hidden">
-            <div className="grid grid-cols-[290px_minmax(0,1fr)] gap-3 p-3 lg:h-full lg:grid-rows-[minmax(0,1fr)] lg:grid-cols-[300px_minmax(0,1fr)_350px] xl:grid-cols-[320px_minmax(0,1fr)_380px]">
+            <div className="grid grid-cols-[290px_minmax(0,1fr)] gap-3 p-3 lg:h-full lg:grid-cols-[300px_minmax(0,1fr)_350px] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_380px]">
               <div className="sticky top-3 row-span-2 flex h-[calc(100dvh-5.5rem)] self-start lg:static lg:row-span-1 lg:h-auto lg:min-h-0 lg:self-stretch [&>*]:flex-1">
                 <ControlPanel
+                  mode={mode}
                   config={config}
-                  onChange={(c) => { setConfig(c); setActivePreset(null) }}
-                  onRun={() => run()}
+                  onChange={(c) => { setConfig(c); setActiveScenario(null); setStale(true) }}
+                  onRun={() => run(config)}
                   running={running}
                   progress={progress}
                   stageText={stageText}
-                  activePreset={activePreset}
-                  onPreset={applyPreset}
+                  activeScenario={activeScenario}
+                  onScenario={(id) => chooseScenario(id)}
+                  step={step}
                 />
               </div>
               <div className="flex lg:min-h-0 [&>*]:flex-1">
-                <PipelinePanel result={result} config={config} running={running} focus={focus} onFocus={setFocus} runKey={runKey} />
+                <PipelinePanel mode={mode} result={result} config={config} running={running} focus={focus} onFocus={setFocus} runKey={runKey} />
               </div>
               <div className="flex lg:min-h-0 [&>*]:flex-1">
-                <AttackerPanel result={result} runKey={runKey} onExport={exportPdf} exporting={exporting} />
+                <AttackerPanel mode={mode} result={result} runKey={runKey} onExport={exportPdf} exporting={exporting}
+                  onTryNext={(id) => chooseScenario(id, true)} />
               </div>
             </div>
           </div>
         )}
       </main>
+    </div>
+  )
+}
+
+function ModeSwitch({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-line bg-panel p-1" role="radiogroup" aria-label="Interface mode">
+      {([['beginner', 'Beginner'], ['pro', 'Pro']] as const).map(([id, name]) => {
+        const on = mode === id
+        return (
+          <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onChange(id)}
+            className={`rounded-md px-2.5 py-1 font-mono text-[11.5px] transition ${
+              on
+                ? id === 'pro' ? 'bg-attack/15 text-attack-hi shadow-[inset_0_0_0_1px_rgba(245,130,91,.45)]' : 'bg-data/15 text-[#7db6ef] shadow-[inset_0_0_0_1px_rgba(55,138,221,.45)]'
+                : 'text-muted hover:text-ink'
+            }`}>
+            {name}
+          </button>
+        )
+      })}
     </div>
   )
 }

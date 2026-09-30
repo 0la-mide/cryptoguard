@@ -1,4 +1,4 @@
-export const GITHUB_URL = 'https://github.com/0la-mide/cryptoguard'
+import { GITHUB_URL, PORTFOLIO_URL } from '../lib/links'
 
 export function About() {
   return (
@@ -83,7 +83,7 @@ export function About() {
             className="inline-flex items-center gap-2 rounded-lg border border-line-strong px-4 py-2 text-sm transition hover:border-data">
             <GitHubIcon /> Source on GitHub
           </a>
-          <a href="https://olamideoladokun.com/" target="_blank" rel="noreferrer" className="text-sm text-muted hover:text-ink">
+          <a href={PORTFOLIO_URL} target="_blank" rel="noreferrer" className="text-sm text-muted hover:text-ink">
             Built by Olamide Oladokun
           </a>
         </footer>

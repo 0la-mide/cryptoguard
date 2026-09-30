@@ -13,7 +13,7 @@ Additions on top of the original script:
   * Threat model. An external attacker sees only a fraction of operations,
     each blurred by network jitter. A rogue node sees every operation cleanly.
   * Optional WCET padding stage: T_obs = max(T_obs, budget). Deterministic.
-  * The attacker verdict at T_obs needs both gap > threshold and p < 0.05,
+  * The attacker verdict at T_obs needs both gap > threshold and p < 0.001 (SIGNIFICANCE),
     so a noisy, under-sampled attacker can't "detect" a leak by chance.
 """
 

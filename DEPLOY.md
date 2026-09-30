@@ -1,15 +1,16 @@
-# Deploying CryptoGuard to the VPS
+# Deploying CryptoGuard to the VPS (Traefik)
 
 Target: `https://cryptoguard.olamide.cloud`
 
-The layout on the VPS is two containers, with only the `web` one published, on `127.0.0.1:8081`:
-
 ```
-Internet ─► host Nginx :443 (TLS, certbot) ─► 127.0.0.1:8081 web (Nginx: static + rate-limited /api) ─► api:8000 (FastAPI)
+Internet ─► Traefik :443 (TLS, ACME) ─► web container (Nginx: static + rate-limited /api) ─► api container (FastAPI)
 ```
 
-These steps assume Ubuntu/Debian with Nginx already on the host (as for `malwarecnn.olamide.cloud`).
-Run the commands on the VPS unless a step says otherwise.
+- Only `web` joins Traefik's network. `api` sits on a private network and is never exposed.
+- No host ports are published. Traefik finds `web` through its Docker labels.
+- TLS certificates come from your existing Traefik certificate resolver.
+
+Run these commands on the VPS unless a step says otherwise.
 
 ## 1. DNS
 
@@ -20,10 +21,32 @@ Check it from any machine:
 dig +short cryptoguard.olamide.cloud
 ```
 
-## 2. Get the code onto the VPS
+## 2. Read your Traefik settings
 
-**Option A: GitHub** (the About page links to `github.com/0la-mide/cryptoguard`, so this repo needs to exist).
-On your Mac, create an empty `cryptoguard` repo on GitHub, then:
+CryptoGuard needs three names from your Traefik setup: the Docker network, the HTTPS entrypoint and the certificate resolver.
+The easiest place to find them is the labels on a container Traefik already routes, such as MalwareCNN.
+
+```bash
+docker ps --format '{{.Names}}'
+```
+
+Then, with the MalwareCNN container's name in place of `malwarecnn`:
+
+```bash
+docker inspect malwarecnn --format '{{json .Config.Labels}}' | tr ',' '\n' | grep traefik
+```
+
+Look for:
+
+| Label | Setting in `.env` |
+|---|---|
+| `traefik.docker.network=…` | `TRAEFIK_NETWORK`. If the label is missing, use the network from `docker inspect malwarecnn --format '{{json .NetworkSettings.Networks}}'` |
+| `…routers.<name>.entrypoints=…` | `TRAEFIK_ENTRYPOINT` |
+| `…routers.<name>.tls.certresolver=…` | `TRAEFIK_CERTRESOLVER` |
+
+## 3. Get the code onto the VPS
+
+**Option A: GitHub.** On your Mac, create an empty `cryptoguard` repo under `0la-mide`, then push:
 
 ```bash
 cd ~/CryptoGuard && git remote add origin git@github.com:0la-mide/cryptoguard.git && git push -u origin main
@@ -41,50 +64,38 @@ sudo mkdir -p /opt/cryptoguard && sudo chown $USER /opt/cryptoguard && git clone
 rsync -av --exclude .venv --exclude node_modules --exclude dist --exclude .git ~/CryptoGuard/ user@vps:/opt/cryptoguard/
 ```
 
-## 3. Docker (skip if `docker compose version` already works)
+## 4. Configure
 
 ```bash
-curl -fsSL https://get.docker.com | sudo sh && sudo usermod -aG docker $USER
+cd /opt/cryptoguard && cp .env.example .env && nano .env
 ```
 
-Log out and back in so the group change applies.
+Set the three `TRAEFIK_*` values from step 2.
 
-## 4. Build and start
+## 5. Build and start
 
 ```bash
 cd /opt/cryptoguard && docker compose up -d --build
 ```
 
-The first build takes a few minutes (numpy, scipy and matplotlib wheels, plus the React build). Then check it:
+The first build takes a few minutes (numpy, scipy and matplotlib wheels, plus the React build).
+Traefik picks the container up automatically. It doesn't need a restart.
+
+## 6. Verify
 
 ```bash
-curl -s http://127.0.0.1:8081/api/health
-```
-
-This should print `{"status":"ok"}`. If port 8081 is already taken on the VPS, change it in `docker-compose.yml` and in step 5.
-
-## 5. Host Nginx site
-
-```bash
-sudo cp /opt/cryptoguard/deploy/cryptoguard.olamide.cloud.conf /etc/nginx/sites-available/ && sudo ln -s /etc/nginx/sites-available/cryptoguard.olamide.cloud.conf /etc/nginx/sites-enabled/
+docker compose -f /opt/cryptoguard/docker-compose.yml ps
 ```
 
 ```bash
-sudo nginx -t && sudo systemctl reload nginx
+curl -s https://cryptoguard.olamide.cloud/api/health
 ```
 
-## 6. HTTPS
+The second command should print `{"status":"ok"}`. Then, in a browser:
 
-```bash
-sudo certbot --nginx -d cryptoguard.olamide.cloud
-```
-
-Choose the redirect option when asked. Certbot sets up auto-renewal.
-
-## 7. Verify
-
-- `https://cryptoguard.olamide.cloud` loads the lab and runs the default simulation.
-- **Export PDF** downloads a report.
+- The lab opens in **Beginner** mode with the welcome screen. Pick a scenario, press Run, and read the explanation.
+- **Pro** mode runs the default simulation straight away.
+- **Save PDF / Export PDF** downloads a report.
 - On a phone you get the "use a tablet or PC" screen.
 
 ## Updating later
@@ -101,6 +112,11 @@ cd /opt/cryptoguard && git pull && docker compose up -d --build
 docker compose -f /opt/cryptoguard/docker-compose.yml logs -f --tail=100
 ```
 
-- **502 from the host Nginx:** the containers aren't up. Run `docker compose ps`.
+- **`network traefik declared as external, but could not be found`:** `TRAEFIK_NETWORK` in `.env` doesn't match. Check `docker network ls`.
+- **Traefik returns 404:** Traefik isn't seeing the router. Check the Traefik container's logs, confirm `web` shares its network
+  (`docker network inspect <network>`), and if Traefik runs with `exposedByDefault=false`, confirm `traefik.enable=true` is set (it is by default here).
+- **Certificate warning / default Traefik cert:** `TRAEFIK_CERTRESOLVER` is wrong, or DNS wasn't pointing at the VPS when Traefik first tried.
+  Fix it, then run `docker compose up -d` again.
+- **Plain http:// doesn't redirect:** HTTP→HTTPS redirects are normally set once, on Traefik's `web` entrypoint. If yours relies on
+  per-router redirects, copy the redirect labels MalwareCNN uses.
 - **429 in the UI:** the per-IP rate limit (2 simulations/s, 6 PDFs/min) is working. Tune it in `frontend/nginx.conf`.
-- **No `sites-available`** (e.g. RHEL-style Nginx): copy the conf into `/etc/nginx/conf.d/` instead.

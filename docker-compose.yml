@@ -1,15 +1,32 @@
+# CryptoGuard behind an existing Traefik instance (Docker provider).
+# Traefik settings come from .env (copy .env.example); read the real values off
+# your other Traefik-routed containers (see DEPLOY.md, step 2).
 services:
   api:
     build: ./backend
     restart: unless-stopped
     mem_limit: 768m
     cpus: 1.5
+    networks: [internal]
 
   web:
     build: ./frontend
     restart: unless-stopped
-    depends_on:
-      - api
-    ports:
-      # Only reachable from the VPS itself; the host's Nginx terminates TLS and proxies here.
-      - "127.0.0.1:8081:80"
+    depends_on: [api]
+    networks: [internal, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
+      - traefik.http.routers.cryptoguard.rule=Host(`${DOMAIN:-cryptoguard.olamide.cloud}`)
+      - traefik.http.routers.cryptoguard.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.cryptoguard.tls=true
+      - traefik.http.routers.cryptoguard.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.services.cryptoguard.loadbalancer.server.port=80
+
+networks:
+  # Private network between web and api; the API is never exposed to Traefik.
+  internal:
+  # The network your Traefik container is attached to.
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}

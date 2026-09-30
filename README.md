@@ -10,10 +10,14 @@ Crypto Op → Raw Timing → [IIR Filter] → [PID Controller] → (WCET pad) �
 
 - **Frontend:** React + TypeScript + Tailwind (Vite), hand-drawn SVG charts. Phones (<768px) get a
   "use a tablet or PC" notice.
+- **Two modes.** *Beginner* (the default) is a guided choose → run → understand journey: plain-language
+  scenario cards, a plain explanation beside every setting, advanced settings collapsed, and a "What
+  happened" summary with a suggested next scenario. *Pro* is the full technical dashboard. Every
+  explanation opens on tap, never on hover, so it works on touchscreens.
 - **Backend:** FastAPI. `app/engine.py` is a parameterised port of `original_leakage_analysis.py`, with
   the pipeline maths unchanged.
-- **Deploy:** Docker Compose (API + Nginx static/proxy) behind the host's Nginx + Let's Encrypt. See
-  [DEPLOY.md](DEPLOY.md).
+- **Deploy:** Docker Compose (API + Nginx static/proxy), routed by an existing Traefik instance through
+  Docker labels. See [DEPLOY.md](DEPLOY.md).
 
 ## Model notes
 
@@ -27,14 +31,14 @@ Crypto Op → Raw Timing → [IIR Filter] → [PID Controller] → (WCET pad) �
 - **WCET padding** (`T_obs = max(T_obs, budget)`) is the only deterministic defense: with no overruns the
   gap is exactly 0.
 
-### Presets (checked over 30 seeds each)
+### Scenarios / presets (checked over 30 seeds each)
 
 | Preset | α / Kp / Ki / Kd | Threat | Leak rate |
 |---|---|---|---|
 | Default (original script) | 0.05 / 0.8 / 0.1 / 0.05 | external | 27/30 |
 | Weak Defense | 0.02 / 0.3 / 0.02 / 0.01 | external | 29/30 |
 | Strong Defense | 0.99 / 2.0 / 0.01 / 0.01 | external | 1/30 (rogue node: 5/30) |
-| Strong + WCET | as above, WCET 600ms | either | 0/30 |
+| WCET Guarantee | as Strong, WCET 600ms | rogue node | 0/30 (external also 0/30) |
 | Rogue Node Attack | 0.8 / 1.5 / 0.01 / 0.05 | rogue node | 30/30 (same config, external: 4/30) |
 
 ## Local development

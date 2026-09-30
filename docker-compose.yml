@@ -1,6 +1,8 @@
 # CryptoGuard behind an existing Traefik instance (Docker provider).
 # Traefik settings come from .env (copy .env.example); read the real values off
 # your other Traefik-routed containers (see DEPLOY.md, step 2).
+name: cryptoguard
+
 services:
   api:
     build: ./backend

@@ -13,10 +13,9 @@ services:
     build: ./frontend
     restart: unless-stopped
     depends_on: [api]
-    networks: [internal, traefik]
+    networks: [internal]
     labels:
       - traefik.enable=true
-      - traefik.docker.network=${TRAEFIK_NETWORK:-traefik}
       - traefik.http.routers.cryptoguard.rule=Host(`${DOMAIN:-cryptoguard.olamide.cloud}`)
       - traefik.http.routers.cryptoguard.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
       - traefik.http.routers.cryptoguard.tls=true
@@ -24,9 +23,4 @@ services:
       - traefik.http.services.cryptoguard.loadbalancer.server.port=80
 
 networks:
-  # Private network between web and api; the API is never exposed to Traefik.
   internal:
-  # The network your Traefik container is attached to.
-  traefik:
-    external: true
-    name: ${TRAEFIK_NETWORK:-traefik}
